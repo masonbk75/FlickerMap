@@ -13,10 +13,11 @@
 		D6AAC7A22327FB7C00AF25B6 /* FlickerMap.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = D6AAC7A02327FB7C00AF25B6 /* FlickerMap.xcdatamodeld */; };
 		D6AAC7A42327FB7E00AF25B6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D6AAC7A32327FB7E00AF25B6 /* Assets.xcassets */; };
 		D6AAC7A72327FB7E00AF25B6 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = D6AAC7A52327FB7E00AF25B6 /* LaunchScreen.storyboard */; };
-		D6AAC7AF2328227E00AF25B6 /* CustomAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6AAC7AE2328227E00AF25B6 /* CustomAnnotation.swift */; };
+		D6AAC7AF2328227E00AF25B6 /* CustomAnnotations.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6AAC7AE2328227E00AF25B6 /* CustomAnnotations.swift */; };
 		D6AAC7B12328369700AF25B6 /* FlickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6AAC7B02328369700AF25B6 /* FlickerViewController.swift */; };
 		D6AAC7B32328660200AF25B6 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6AAC7B22328660200AF25B6 /* Constants.swift */; };
 		D6AAC7B52328661F00AF25B6 /* FlickerCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6AAC7B42328661F00AF25B6 /* FlickerCollectionViewCell.swift */; };
+		D6FA8F0E2343FDFD00D736BB /* ColorExtention.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6FA8F0D2343FDFC00D736BB /* ColorExtention.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,10 +29,11 @@
 		D6AAC7A32327FB7E00AF25B6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D6AAC7A62327FB7E00AF25B6 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		D6AAC7A82327FB7E00AF25B6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		D6AAC7AE2328227E00AF25B6 /* CustomAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomAnnotation.swift; sourceTree = "<group>"; };
+		D6AAC7AE2328227E00AF25B6 /* CustomAnnotations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomAnnotations.swift; sourceTree = "<group>"; };
 		D6AAC7B02328369700AF25B6 /* FlickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlickerViewController.swift; sourceTree = "<group>"; };
 		D6AAC7B22328660200AF25B6 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		D6AAC7B42328661F00AF25B6 /* FlickerCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlickerCollectionViewCell.swift; sourceTree = "<group>"; };
+		D6FA8F0D2343FDFC00D736BB /* ColorExtention.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorExtention.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -69,8 +71,9 @@
 				D6AAC7B02328369700AF25B6 /* FlickerViewController.swift */,
 				D6AAC7B22328660200AF25B6 /* Constants.swift */,
 				D6AAC79D2327FB7C00AF25B6 /* Main.storyboard */,
-				D6AAC7AE2328227E00AF25B6 /* CustomAnnotation.swift */,
+				D6AAC7AE2328227E00AF25B6 /* CustomAnnotations.swift */,
 				D6AAC7B42328661F00AF25B6 /* FlickerCollectionViewCell.swift */,
+				D6FA8F0D2343FDFC00D736BB /* ColorExtention.swift */,
 				D6AAC7A32327FB7E00AF25B6 /* Assets.xcassets */,
 				D6AAC7A52327FB7E00AF25B6 /* LaunchScreen.storyboard */,
 				D6AAC7A82327FB7E00AF25B6 /* Info.plist */,
@@ -154,8 +157,9 @@
 				D6AAC7B12328369700AF25B6 /* FlickerViewController.swift in Sources */,
 				D6AAC79A2327FB7C00AF25B6 /* AppDelegate.swift in Sources */,
 				D6AAC7B52328661F00AF25B6 /* FlickerCollectionViewCell.swift in Sources */,
+				D6FA8F0E2343FDFD00D736BB /* ColorExtention.swift in Sources */,
 				D6AAC7A22327FB7C00AF25B6 /* FlickerMap.xcdatamodeld in Sources */,
-				D6AAC7AF2328227E00AF25B6 /* CustomAnnotation.swift in Sources */,
+				D6AAC7AF2328227E00AF25B6 /* CustomAnnotations.swift in Sources */,
 				D6AAC7B32328660200AF25B6 /* Constants.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

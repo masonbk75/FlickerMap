@@ -6,9 +6,18 @@
 //  Copyright © 2019 Mason Kelly. All rights reserved.
 //
 
+/*
+ - Add edit button to update coredata
+ - Add delete coredata functionality to delete pin button
+ - Fix cell width for tags
+ - Save pin with tags
+ - Different color for different tags
+ */
+
 import UIKit
 import CoreLocation
 import MapKit
+import CoreData
 
 class ViewController: UIViewController {
     
@@ -26,18 +35,30 @@ class ViewController: UIViewController {
     @IBOutlet weak var searchTextField: UITextField!
     @IBOutlet weak var cancelButton: UIButton!
     @IBOutlet weak var searchBarButton: UIButton!
+    @IBOutlet weak var detailView: UIView!
+    @IBOutlet weak var detailImageView: UIImageView!
+    @IBOutlet weak var detailButton: UIButton!
+    @IBOutlet weak var littleView: UIView!
+    @IBOutlet weak var detailName: UILabel!
+    @IBOutlet weak var detailAddress: UILabel!
+    @IBOutlet weak var deleteButton: UIButton!
     
     
-    var pinCoverImageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
-    
-    var selectedAnnotation: MKAnnotationView?
-    var annotationTitle = ""
+    var numberSaved = Int()
+    var pinType = Bool()
+    var annotationTitle = "New Pin"
     var coverImage = UIImage()
     var pinLocation = CLLocationCoordinate2D()
+    var street = String()
+    var city = String()
+    var zip = String()
+    var country = String()
+    var state = String()
     
     let locationManager = CLLocationManager()
     var menuShowing = false
     var searchShowing = false
+    var detailShowing = false
     
 
     override func viewDidLoad() {
@@ -47,20 +68,17 @@ class ViewController: UIViewController {
     }
     
     override func viewDidAppear(_ animated: Bool) {
+        getSavedPins()
         super.viewDidLoad()
         URLArray.removeAll()
         navigationController?.isNavigationBarHidden = true
     }
     
     func setupView() {
-        bottomConstraint.constant = -300
+        addGradient()
+        leadingConstraint.constant = -180
         searchTopConstraint.constant = -130
-
-//        let rightBarButton = UIBarButtonItem(title: "Delete Pins", style: .plain, target: self, action: #selector(deletePins))
-//        let leftBarButton = UIBarButtonItem(title: "Map Type", style: .plain, target: self, action: #selector(changeMapType))
-        
-//        navigationItem.rightBarButtonItem = rightBarButton
-//        navigationItem.leftBarButtonItem = leftBarButton
+        bottomConstraint.constant = -250
         
         let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(tapped))
         mapView.addGestureRecognizer(tapGestureRecognizer)
@@ -79,9 +97,20 @@ class ViewController: UIViewController {
         buttonView.layer.shadowOpacity = 0.60
         buttonView.layer.cornerRadius = 12
         
+        detailView.layer.shadowColor = UIColor.black.cgColor
+        detailView.layer.shadowRadius = 8.0
+        detailView.layer.shadowOpacity = 0.60
+        detailView.layer.cornerRadius = 14
+        
+        detailImageView.layer.cornerRadius = 14
+        littleView.layer.cornerRadius = 3
+        
         currentLocationButton.addTarget(self, action: #selector(currentLocationPressed), for: .touchUpInside)
         menuButton.addTarget(self, action: #selector(changeMapType), for: .touchUpInside)
         searchButton.addTarget(self, action: #selector(searchButtonClicked), for: .touchUpInside)
+        detailButton.addTarget(self, action: #selector(showFlickerView), for: .touchUpInside)
+        deleteButton.addTarget(self, action: #selector(deletePin), for: .touchUpInside)
+
         
         searchTextField.delegate = self
         searchTextField.addTarget(self, action: #selector(self.textFieldDidChange(_:)), for: UIControl.Event.editingChanged)
@@ -117,6 +146,26 @@ class ViewController: UIViewController {
             self.locationManager.startUpdatingLocation()
         }
         
+    }
+    
+    func getSavedPins() {
+        let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+        let request = NSFetchRequest<NSFetchRequestResult>(entityName: "SavedPins")
+        request.returnsObjectsAsFaults = false
+        do {
+            let result = try context.fetch(request)
+            for data in result as! [NSManagedObject] {
+                print(data)
+                let lat = data.value(forKey: "latitude") as! CLLocationDegrees
+                let lon = data.value(forKey: "longitude") as! CLLocationDegrees
+                let name = data.value(forKey: "name") as! String
+                let customCoordinate = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+                let customAnnotation = CustomAnnotation(coordinate: customCoordinate, title: name, image: self.coverImage, type: .saved)
+                self.mapView.addAnnotation(customAnnotation)
+            }
+        } catch {
+            print("Failed request")
+        }
     }
     
     deinit {
@@ -156,7 +205,7 @@ class ViewController: UIViewController {
                 print(item.placemark)
                 let coordinates = item.placemark.coordinate
                 let title = item.name
-                let customAnnotation = CustomAnnotation(coordinate: coordinates, title: title!, image: self.coverImage)
+                let customAnnotation = CustomAnnotation(coordinate: coordinates, title: title!, image: self.coverImage, type: .unsaved)
                 self.mapView.addAnnotation(customAnnotation)
             }
             self.mapView.showAnnotations(self.mapView.annotations, animated: true)
@@ -171,19 +220,42 @@ class ViewController: UIViewController {
         }
     }
     
-    @objc func deletePins() {
+    @objc func deletePin() {
         let annotations = self.mapView.annotations
         for _annotation in annotations {
             if let annotation = _annotation as? CustomAnnotation {
-                self.mapView.removeAnnotation(annotation)
+                if annotation.title == self.annotationTitle {
+                    self.mapView.removeAnnotation(annotation)
+                    bottomConstraint.constant = -300
+                    UIView.animate(withDuration: 0.2, delay: 0.0, options: .curveEaseIn, animations: {
+                        self.view.layoutIfNeeded()
+                    }, completion: nil)
+                    detailShowing = !detailShowing
+                }
             }
         }
-        
     }
     
     
     @objc func changeMapType() {
         if (menuShowing) {
+            leadingConstraint.constant = -180
+            UIView.animate(withDuration: 0.2, delay: 0.0, options: .curveEaseIn, animations: {
+                self.view.layoutIfNeeded()
+            }, completion: nil)
+        }
+        else {
+            leadingConstraint.constant = 0
+            UIView.animate(withDuration: 0.2, delay: 0.0, options: .curveEaseIn, animations: {
+                self.view.layoutIfNeeded()
+                }, completion: nil)
+        }
+        menuShowing = !menuShowing
+        
+    }
+    
+    func showDetailView() {
+        if (detailShowing) {
             bottomConstraint.constant = -300
             UIView.animate(withDuration: 0.2, delay: 0.0, options: .curveEaseIn, animations: {
                 self.view.layoutIfNeeded()
@@ -193,15 +265,14 @@ class ViewController: UIViewController {
             bottomConstraint.constant = 0
             UIView.animate(withDuration: 0.2, delay: 0.0, options: .curveEaseIn, animations: {
                 self.view.layoutIfNeeded()
-                }, completion: nil)
+            }, completion: nil)
         }
-        menuShowing = !menuShowing
-        
+        detailShowing = !detailShowing
     }
-    
+
     @IBAction func standardButtonPressed(_ sender: Any) {
         mapView.mapType = MKMapType.standard
-        bottomConstraint.constant = -300
+        leadingConstraint.constant = -180
         UIView.animate(withDuration: 0.2, delay: 0.0, options: .curveEaseIn, animations: {
             self.view.layoutIfNeeded()
         }, completion: nil)
@@ -211,7 +282,7 @@ class ViewController: UIViewController {
     
     @IBAction func satelliteButtonPressed(_ sender: Any) {
         mapView.mapType = MKMapType.satellite
-        bottomConstraint.constant = -300
+        leadingConstraint.constant = -180
         UIView.animate(withDuration: 0.2, delay: 0.0, options: .curveEaseIn, animations: {
             self.view.layoutIfNeeded()
         }, completion: nil)
@@ -220,7 +291,7 @@ class ViewController: UIViewController {
     
     @IBAction func hybridButtonPressed(_ sender: Any) {
         mapView.mapType = MKMapType.hybrid
-        bottomConstraint.constant = -300
+        leadingConstraint.constant = -180
         UIView.animate(withDuration: 0.2, delay: 0.0, options: .curveEaseIn, animations: {
             self.view.layoutIfNeeded()
         }, completion: nil)
@@ -229,15 +300,18 @@ class ViewController: UIViewController {
     }
 
     @objc func tapped(sender: UITapGestureRecognizer) {
+        if detailShowing {
+            showDetailView()
+        }
         buttonView.alpha = 1.0
-        bottomConstraint.constant = -300
-        //searchTopConstraint.constant = -130
-        //hideKeyboard()
+        leadingConstraint.constant = -180
+        searchTopConstraint.constant = -130
+        hideKeyboard()
         UIView.animate(withDuration: 0.2, delay: 0.0, options: .curveEaseIn, animations: {
             self.view.layoutIfNeeded()
         }, completion: nil)
         menuShowing = !menuShowing
-        //searchShowing = !searchShowing
+        searchShowing = !searchShowing
     }
     
     @IBAction func cancelButtonTapped(_ sender: Any) {
@@ -262,11 +336,22 @@ class ViewController: UIViewController {
         let touchLocation = sender.location(in: mapView)
         let locationCoordinate = mapView.convert(touchLocation, toCoordinateFrom: mapView)
         print("Tapped at lat: \(locationCoordinate.latitude) long: \(locationCoordinate.longitude)")
+        
         let customCoordinate = CLLocationCoordinate2D(latitude: locationCoordinate.latitude, longitude: locationCoordinate.longitude)
-        let customAnnotation = CustomAnnotation(coordinate: customCoordinate, title: "title!", image: self.coverImage)
-        self.mapView.addAnnotation(customAnnotation)
+        
+        let location = CLLocation(latitude: customCoordinate.latitude, longitude: customCoordinate.longitude)
+        
+        CLGeocoder().reverseGeocodeLocation(location, completionHandler: {
+            placemarks, error -> Void in
+            guard let placeMark = placemarks?.first else { return }
+            if let locationName = placeMark.name {
+                print("location name: \(locationName)")
+                self.annotationTitle = locationName
+            }
+            let customAnnotation = CustomAnnotation(coordinate: customCoordinate, title: self.annotationTitle, image: self.coverImage, type: .unsaved)
+            self.mapView.addAnnotation(customAnnotation)
+        })        
     }
-    
     
     private func flickrURLFromParameters(lat: String, lon: String) -> URL {
         // Build base URL
@@ -366,7 +451,8 @@ class ViewController: UIViewController {
                 let downloadImage = UIImage(data: data!)!
                 
                 DispatchQueue.main.async(){
-                    self.pinCoverImageView.image = downloadImage
+                    self.detailImageView.image = downloadImage
+                    //self.pinCoverImageView.image = downloadImage
                     // coverImage is UIImage -> just a soul
                     // pinCoverImageview is UIImageView -> body
                 }
@@ -376,11 +462,21 @@ class ViewController: UIViewController {
         task.resume()
     }
     
-    
     func displayAlert(_ message: String) {
         let alert = UIAlertController(title: "Alert", message: message, preferredStyle: UIAlertController.Style.alert)
         alert.addAction(UIAlertAction(title: "Click", style: .default, handler: nil))
         self.present(alert, animated: true, completion: nil)
+    }
+    
+    func addGradient() {
+        let layer = CAGradientLayer()
+        let screenSize = UIScreen.main.bounds.size
+        layer.frame = CGRect(x: 0, y: 0, width: screenSize.width, height: 165)
+        layer.colors = [UIColor.clear.cgColor, UIColor.black.withAlphaComponent(0.8).cgColor]
+        let view = UIView()
+        view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        view.layer.addSublayer(layer)
+        detailImageView.addSubview(view)
     }
     
 }
@@ -402,94 +498,79 @@ extension ViewController: CLLocationManagerDelegate, MKMapViewDelegate {
     }
     
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
-        if !(annotation is CustomAnnotation) {
-            return nil
+        var annotationView = MKMarkerAnnotationView()
+        guard let annotation = annotation as? CustomAnnotation else {return nil}
+        var identifier = ""
+        var color = UIColor.red
+        switch annotation.type {
+            case .saved:
+                identifier = "Saved"
+                color = UIColor.FlatColor.Red.Valencia
+            case .unsaved:
+                identifier = "Unsaved"
+                self.detailButton.titleLabel?.text = "Click to save pin"
+                color = .black
         }
-        var annotationView = self.mapView.dequeueReusableAnnotationView(withIdentifier: "Pin")
-        
-        if annotationView == nil {
-            annotationView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "Pin")
-            annotationView?.canShowCallout = true
-        } else {
-            annotationView!.annotation = annotation
+        if let dequedView = mapView.dequeueReusableAnnotationView(
+            withIdentifier: identifier)
+            as? MKMarkerAnnotationView {
+            annotationView = dequedView
+        } else{
+            annotationView = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
         }
-        
-        let customAnnotation = annotation as! CustomAnnotation
-        
-        let button = UIButton(frame: CGRect(x: 0, y: 205, width: 165, height: 30))
-        button.backgroundColor = .darkGray
-        button.setTitle("Click to see more", for: .normal)
-        button.addTarget(self, action: #selector(showFlickerView), for: .touchUpInside)
-        
-        let deleteButton = UIButton(frame: CGRect( x: 169, y: 205, width: 30, height: 30))
-        deleteButton.backgroundColor = .red
-        deleteButton.setImage(UIImage(named: "delete-button"), for: .normal)
-        deleteButton.addTarget(self, action: #selector(deletePins), for: .touchUpInside)
-        
-        let pinCoverImageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
-        pinCoverImageView.backgroundColor = .gray
-        pinCoverImageView.image = self.coverImage
-        self.pinCoverImageView = pinCoverImageView
-        self.pinLocation = customAnnotation.coordinate
-        
-        let detailView = UIView()
-        detailView.addSubview(pinCoverImageView)
-        detailView.addSubview(button)
-        detailView.addSubview(deleteButton)
-        let widthConstraint = NSLayoutConstraint(item: detailView, attribute: .width, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1, constant: 200)
-        detailView.addConstraint(widthConstraint)
-        let heightConstraint = NSLayoutConstraint(item: detailView, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1, constant: 238)
-        detailView.addConstraint(heightConstraint)
-        
-        annotationView?.detailCalloutAccessoryView = detailView
-        
-        selectedAnnotation = annotationView
+        annotationView.markerTintColor = color
+        //annotationView.glyphImage = UIImage(named: "pizza")
+        annotationView.glyphTintColor = .yellow
+        //annotationView.clusteringIdentifier = identifier
         return annotationView
     }
     
-    
-    
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-        if let annotationTitle = view.annotation?.title {
-            print("User tapped on annotation with title: \(annotationTitle!)")
+        URLArray.removeAll()
+        self.detailImageView.image = UIImage()
+        self.annotationTitle = ((view.annotation?.title)!)!
+        if let pin = view.annotation as? CustomAnnotation {
+            if pin.type == .saved {
+                self.pinType = true
+            } else {
+                self.pinType = false
+            }
         }
-        let annotationCoord = view.annotation?.coordinate
-        
-        let customCoordinate = annotationCoord
-        let geoCoder = CLGeocoder()
+        let customCoordinate = view.annotation?.coordinate
         let location = CLLocation(latitude: customCoordinate!.latitude, longitude: customCoordinate!.longitude)
         self.pinLocation = customCoordinate!
-        geoCoder.reverseGeocodeLocation(location, completionHandler: {
+        
+        let searchURL = self.flickrURLFromParameters(lat: String(customCoordinate!.latitude), lon: String(customCoordinate!.longitude))
+        print("URL: \(searchURL)")
+        self.performFlickrSearch(searchURL)
+        
+        CLGeocoder().reverseGeocodeLocation(location, completionHandler: {
             placemarks, error -> Void in
-            // Place details
             guard let placeMark = placemarks?.first else { return }
-            // Location name
             if let locationName = placeMark.name {
-                print(locationName)
-                (self.selectedAnnotation?.annotation as? CustomAnnotation)?.title = locationName
+                print("location name: \(locationName)")
+                self.detailName.text = locationName
             }
-            // Street address
             if let street = placeMark.thoroughfare {
-                print(street)
+                self.street = street
             }
-            // City
             if let city = placeMark.subAdministrativeArea {
-                print(city)
-                self.annotationTitle = city
+                self.city = city
             }
-            // Zip code
-            if let zip = placeMark.isoCountryCode {
-                print(zip)
+            if let state = placeMark.administrativeArea {
+                self.state = state
             }
-            // Country
-            if let country = placeMark.country {
-                print(country)
+            if let country = placeMark.isoCountryCode {
+                self.country = country
             }
-            let searchURL = self.flickrURLFromParameters(lat: String(customCoordinate!.latitude), lon: String(customCoordinate!.longitude))
-            print("URL: \(searchURL)")
-            self.performFlickrSearch(searchURL)
+            if let zip = placeMark.postalCode {
+                self.zip = zip
+            }
+            self.detailAddress.text = "\(self.street), \(self.city), \(self.state) \(self.zip), \(self.country)"
+            print(self.detailAddress.text!)
         })
         
+        showDetailView()
     }
     
     
@@ -497,7 +578,7 @@ extension ViewController: CLLocationManagerDelegate, MKMapViewDelegate {
         let controller = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "FlickerViewController") as! FlickerViewController
 
         print(self.pinLocation)
-
+        FlickerViewController.type = self.pinType
         FlickerViewController.pinLocation = self.pinLocation
         navigationController?.pushViewController(controller, animated: true)
     }
@@ -521,7 +602,6 @@ extension ViewController:  UITextFieldDelegate {
         searchTextField.resignFirstResponder()
     }
     
-
     @objc func textFieldDidChange(_ textField: UITextField) {
         if searchTextField.text != "" {
             cancelButton.alpha = 0.0
@@ -545,5 +625,56 @@ extension ViewController:  UITextFieldDelegate {
 // Change the padding in images collection view
 // save images and pins into CoreData
 // after use pure CoreData -> search a pod to use CoreData
-// Serach locatio
+// Serach location
 
+
+
+
+
+
+
+//        if !(annotation is CustomAnnotation) {
+//            return nil
+//        }
+//        var annotationView = self.mapView.dequeueReusableAnnotationView(withIdentifier: "Pin")
+//
+//        if annotationView == nil {
+//            annotationView = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: "Marker")
+//            //annotationView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "Pin")
+//            annotationView?.canShowCallout = true
+//        } else {
+//            annotationView!.annotation = annotation
+//        }
+//
+//        let customAnnotation = annotation as! CustomAnnotation
+//
+//        let button = UIButton(frame: CGRect(x: 0, y: 205, width: 165, height: 30))
+//        button.backgroundColor = .darkGray
+//        button.setTitle("Click to see more", for: .normal)
+//        button.addTarget(self, action: #selector(showFlickerView), for: .touchUpInside)
+//
+//        let deleteButton = UIButton(frame: CGRect( x: 169, y: 205, width: 30, height: 30))
+//        deleteButton.backgroundColor = .red
+//        deleteButton.setImage(UIImage(named: "delete-button"), for: .normal)
+//        deleteButton.addTarget(self, action: #selector(deletePins), for: .touchUpInside)
+//
+//        let pinCoverImageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
+//        pinCoverImageView.backgroundColor = .gray
+//        pinCoverImageView.image = self.coverImage
+//        self.pinCoverImageView = pinCoverImageView
+//        self.pinLocation = customAnnotation.coordinate
+//
+//        let detailAnnotationView = UIView()
+//        detailAnnotationView.addSubview(pinCoverImageView)
+//        detailAnnotationView.addSubview(button)
+//        detailAnnotationView.addSubview(deleteButton)
+//        let widthConstraint = NSLayoutConstraint(item: detailAnnotationView, attribute: .width, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1, constant: 200)
+//        detailAnnotationView.addConstraint(widthConstraint)
+//        let heightConstraint = NSLayoutConstraint(item: detailAnnotationView, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1, constant: 238)
+//        detailAnnotationView.addConstraint(heightConstraint)
+//
+//        annotationView?.detailCalloutAccessoryView = detailAnnotationView
+//
+//
+//        selectedAnnotation = annotationView
+//        return annotationView
